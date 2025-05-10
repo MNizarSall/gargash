@@ -41,11 +41,12 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           "#createdAt": "CreatedAt",
           "#chatId": "ChatId",
           "#prompt": "Prompt",
+          "#status": "Status",
         },
         ExpressionAttributeValues: {
           ":type": "CHAT",
         },
-        ProjectionExpression: "#chatId, #type, #createdAt, #prompt",
+        ProjectionExpression: "#chatId, #type, #createdAt, #prompt, #status",
         ScanIndexForward: false, // This makes it DESC order
         Limit: limit,
         ExclusiveStartKey: startKey,
@@ -65,6 +66,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           id: item.ChatId,
           prompt: item.Prompt,
           createdAt: item.CreatedAt,
+          status: item.Status,
         })),
         nextToken,
       }),

@@ -3,9 +3,16 @@ export interface Message {
   message: string;
 }
 
+export enum DiscussionStatus {
+  STARTED = "STARTED",
+  CONTINUES = "CONTINUES",
+  CONCLUDED = "CONCLUDED",
+}
+
 export interface Chat {
   id: string;
   prompt: string;
   createdAt: number;
-  discussion: Message[];
+  status: DiscussionStatus;
+  discussion?: Message[];
 }

@@ -45,6 +45,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     id: item.ChatId,
     prompt: item.Prompt,
     createdAt: item.CreatedAt,
+    status: item.Status,
     discussion: item.Discussion || [],
   };
 

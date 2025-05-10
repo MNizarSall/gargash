@@ -5,18 +5,10 @@ import { v4 as uuidv4 } from "uuid";
 import { startChatSchema } from "../schemas/start-chat.schema";
 import { ZodError } from "zod";
 import { headers } from "../utils/http.utils";
-import { createAIWithRole } from "../clients/open-ai.client";
-import { Message, Chat } from "../models/chat.model";
-import { SALES_EXPERT_PROMPT } from "../prompts/sales-expert.prompt";
+import { Chat, DiscussionStatus } from "../models/chat.model";
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
-
-// Initialize Sales Expert AI
-const salesExpert = createAIWithRole({
-  id: "sales-expert",
-  systemPrompt: SALES_EXPERT_PROMPT,
-});
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -27,22 +19,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const chatId = uuidv4();
     const timestamp = Date.now();
 
-    // Get response from Sales Expert AI
-    const aiResponse = await salesExpert.sendMessage(validatedData.prompt);
-
-    // Create discussion array with only the AI response
-    const discussion: Message[] = [
-      {
-        agentId: "sales-expert",
-        message: aiResponse,
-      },
-    ];
-
     const chat: Chat = {
       id: chatId,
       prompt: validatedData.prompt,
       createdAt: timestamp,
-      discussion,
+      status: DiscussionStatus.STARTED,
     };
 
     // Create new chat in DynamoDB
@@ -54,7 +35,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           CreatedAt: timestamp,
           Prompt: validatedData.prompt,
           Type: "CHAT",
-          Discussion: discussion,
+          Status: DiscussionStatus.STARTED,
         },
       })
     );
