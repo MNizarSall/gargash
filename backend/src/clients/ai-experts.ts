@@ -11,28 +11,22 @@ export enum ExpertRole {
   HR = "hr",
 }
 
-interface LeaderResponse {
+export interface LeaderResponse {
   targetExpert: ExpertRole;
-  query: string;
-  context?: Record<string, unknown>;
+  message: string;
+  discussionComplete?: boolean;
 }
 
-interface SalesResponse {
-  recommendation: string;
-  metrics?: string[];
-  nextSteps?: string[];
+export interface SalesResponse {
+  message: string;
 }
 
-interface LegalResponse {
-  advice: string;
-  risks?: string[];
-  requirements?: string[];
+export interface LegalResponse {
+  message: string;
 }
 
-interface HRResponse {
-  guidance: string;
-  policies?: string[];
-  bestPractices?: string[];
+export interface HRResponse {
+  message: string;
 }
 
 export class AIExperts {

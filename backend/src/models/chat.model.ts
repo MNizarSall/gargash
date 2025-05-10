@@ -1,12 +1,13 @@
-export interface Message {
-  agentId: string;
-  message: string;
-}
-
 export enum DiscussionStatus {
   STARTED = "STARTED",
   CONTINUES = "CONTINUES",
   CONCLUDED = "CONCLUDED",
+}
+
+export interface Message {
+  role: string;
+  content: string;
+  targetExpert?: string;
 }
 
 export interface Chat {
@@ -15,4 +16,5 @@ export interface Chat {
   createdAt: number;
   status: DiscussionStatus;
   discussion?: Message[];
+  conclusion?: string;
 }

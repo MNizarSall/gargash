@@ -47,6 +47,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     createdAt: item.CreatedAt,
     status: item.Status,
     discussion: item.Discussion || [],
+    conclusion: item.Conclusion,
   };
 
   return {
