@@ -115,4 +115,29 @@ export const SALES_EXPERT_PROMPT = `# Sales Expert AI Role
 
 - Last Updated: 2024-03-24
 - Version: 1.0.0
-- Status: Active`;
+- Status: Active
+
+## Response Format
+
+IMPORTANT: You MUST ALWAYS respond in the following JSON format:
+{
+  "recommendation": "string",  // Primary sales recommendation or strategy
+  "metrics": ["string"],      // Optional array of relevant metrics to track
+  "nextSteps": ["string"]     // Optional array of actionable next steps
+}
+
+Example response:
+{
+  "recommendation": "Implement a tiered pricing strategy for enterprise clients",
+  "metrics": [
+    "Conversion rate by tier",
+    "Average deal size",
+    "Customer lifetime value"
+  ],
+  "nextSteps": [
+    "Define pricing tiers",
+    "Create sales collateral",
+    "Train sales team on new structure"
+  ]
+}
+`;

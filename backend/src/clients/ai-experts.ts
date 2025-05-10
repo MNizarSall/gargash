@@ -1,61 +1,89 @@
-import { OpenAIClient, createAIWithRole } from "./open-ai.client";
+import { openAIClient, Message } from "./open-ai.client";
 import { SALES_EXPERT_PROMPT } from "../prompts/sales-expert.prompt";
 import { LEGAL_EXPERT_PROMPT } from "../prompts/legal-expert.prompt";
 import { HR_EXPERT_PROMPT } from "../prompts/hr-expert.prompt";
 import { LEADER_EXPERT_PROMPT } from "../prompts/leader-expert.prompt";
 
-// Singleton instances for each expert
-let salesExpertInstance: OpenAIClient | null = null;
-let legalExpertInstance: OpenAIClient | null = null;
-let hrExpertInstance: OpenAIClient | null = null;
-let leaderExpertInstance: OpenAIClient | null = null;
+export enum ExpertRole {
+  LEADER = "leader",
+  SALES = "sales",
+  LEGAL = "legal",
+  HR = "hr",
+}
+
+interface LeaderResponse {
+  targetExpert: ExpertRole;
+  query: string;
+  context?: Record<string, unknown>;
+}
+
+interface SalesResponse {
+  recommendation: string;
+  metrics?: string[];
+  nextSteps?: string[];
+}
+
+interface LegalResponse {
+  advice: string;
+  risks?: string[];
+  requirements?: string[];
+}
+
+interface HRResponse {
+  guidance: string;
+  policies?: string[];
+  bestPractices?: string[];
+}
 
 export class AIExperts {
-  static getLeaderExpert(): OpenAIClient {
-    if (!leaderExpertInstance) {
-      leaderExpertInstance = createAIWithRole({
-        id: "leader-expert",
-        systemPrompt: LEADER_EXPERT_PROMPT,
-      });
-    }
-    return leaderExpertInstance;
+  private static createMessages(systemPrompt: string, userMessages: string[]): Message[] {
+    return [
+      { role: "system" as const, content: systemPrompt },
+      ...userMessages.map(msg => ({ role: "user" as const, content: msg })),
+    ];
   }
 
-  static getSalesExpert(): OpenAIClient {
-    if (!salesExpertInstance) {
-      salesExpertInstance = createAIWithRole({
-        id: "sales-expert",
-        systemPrompt: SALES_EXPERT_PROMPT,
-      });
-    }
-    return salesExpertInstance;
+  static async askLeader(messages: string[]): Promise<LeaderResponse> {
+    const completion = await openAIClient.instance.complete(
+      this.createMessages(LEADER_EXPERT_PROMPT, messages)
+    );
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) throw new Error("No response from leader");
+
+    return JSON.parse(content);
   }
 
-  static getLegalExpert(): OpenAIClient {
-    if (!legalExpertInstance) {
-      legalExpertInstance = createAIWithRole({
-        id: "legal-expert",
-        systemPrompt: LEGAL_EXPERT_PROMPT,
-      });
-    }
-    return legalExpertInstance;
+  static async askSales(messages: string[]): Promise<SalesResponse> {
+    const completion = await openAIClient.instance.complete(
+      this.createMessages(SALES_EXPERT_PROMPT, messages)
+    );
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) throw new Error("No response from sales expert");
+
+    return JSON.parse(content);
   }
 
-  static getHRExpert(): OpenAIClient {
-    if (!hrExpertInstance) {
-      hrExpertInstance = createAIWithRole({
-        id: "hr-expert",
-        systemPrompt: HR_EXPERT_PROMPT,
-      });
-    }
-    return hrExpertInstance;
+  static async askLegal(messages: string[]): Promise<LegalResponse> {
+    const completion = await openAIClient.instance.complete(
+      this.createMessages(LEGAL_EXPERT_PROMPT, messages)
+    );
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) throw new Error("No response from legal expert");
+
+    return JSON.parse(content);
   }
 
-  // Helper method to clear all instances (useful for testing or resetting state)
-  static clearAllInstances(): void {
-    salesExpertInstance = null;
-    legalExpertInstance = null;
-    hrExpertInstance = null;
-    leaderExpertInstance = null;
+  static async askHR(messages: string[]): Promise<HRResponse> {
+    const completion = await openAIClient.instance.complete(
+      this.createMessages(HR_EXPERT_PROMPT, messages)
+    );
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) throw new Error("No response from HR expert");
+
+    return JSON.parse(content);
   }
 }

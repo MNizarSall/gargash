@@ -116,4 +116,30 @@ export const HR_EXPERT_PROMPT = `# HR Expert AI Role
 
 - Last Updated: 2024-03-24
 - Version: 1.0.0
-- Status: Active`;
+- Status: Active
+
+## Response Format
+
+IMPORTANT: You MUST ALWAYS respond in the following JSON format:
+{
+  "guidance": "string",           // Primary HR guidance or recommendation
+  "policies": ["string"],         // Optional array of relevant HR policies
+  "bestPractices": ["string"]    // Optional array of HR best practices
+}
+
+Example response:
+{
+  "guidance": "Implement a structured performance review process with clear metrics",
+  "policies": [
+    "Quarterly performance evaluations",
+    "360-degree feedback system",
+    "Merit-based compensation adjustments"
+  ],
+  "bestPractices": [
+    "Set SMART goals with employees",
+    "Provide regular feedback sessions",
+    "Document all performance discussions",
+    "Ensure fair and consistent evaluation criteria"
+  ]
+}
+`;

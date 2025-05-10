@@ -119,6 +119,30 @@ export const LEGAL_EXPERT_PROMPT = `# Legal Expert AI Role
 - Version: 1.0.0
 - Status: Active
 
+## Response Format
+
+IMPORTANT: You MUST ALWAYS respond in the following JSON format:
+{
+  "advice": "string",         // Primary legal advice or recommendation
+  "risks": ["string"],        // Optional array of identified legal risks
+  "requirements": ["string"]  // Optional array of legal/compliance requirements
+}
+
+Example response:
+{
+  "advice": "Proceed with the contract after implementing suggested revisions",
+  "risks": [
+    "Unclear liability limitations",
+    "Non-standard termination clause",
+    "Missing data protection provisions"
+  ],
+  "requirements": [
+    "Add GDPR compliance clause",
+    "Include force majeure provision",
+    "Update dispute resolution section"
+  ]
+}
+
 ## Legal Disclaimer
 
 This AI expert provides general legal information and guidance but does not constitute legal advice. For specific legal matters, consult with qualified legal counsel in your jurisdiction.`;
