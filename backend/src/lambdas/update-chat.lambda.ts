@@ -16,6 +16,8 @@ interface Event {
   expertResponse?: {
     message: string;
   };
+  currentTurn: number;
+  maxTurns: number;
 }
 
 export const handler = async (event: Event) => {
@@ -85,10 +87,14 @@ export const handler = async (event: Event) => {
     })
   );
 
+  // Return only the data needed for the next state
   return {
-    ...chat,
-    status,
-    discussion,
-    conclusion,
+    chatId: chat.id,
+    createdAt: chat.createdAt,
+    prompt: chat.prompt,
+    currentTurn: event.currentTurn,
+    maxTurns: event.maxTurns,
+    leaderResponse: event.leaderResponse,
+    expertResponse: event.expertResponse,
   };
 };

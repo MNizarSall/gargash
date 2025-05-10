@@ -89,17 +89,32 @@ export class ExpertDiscussionStateMachine extends Construct {
     const incrementTurn = new sfn.Pass(this, "Increment Turn", {
       parameters: {
         "currentTurn.$": "States.MathAdd($.currentTurn, 1)",
-        "chatId.$": "$.chatId",
-        "createdAt.$": "$.createdAt",
-        "prompt.$": "$.prompt",
-        "maxTurns.$": "$.maxTurns",
-        "leaderResponse.$": "$.leaderResponse",
-        "expertResponse.$": "$.expertResponse",
+        "chatId.$": "$.updateResult.chatId",
+        "createdAt.$": "$.updateResult.createdAt",
+        "prompt.$": "$.updateResult.prompt",
+        "maxTurns.$": "$.updateResult.maxTurns",
+        "leaderResponse.$": "$.updateResult.leaderResponse",
+        "expertResponse.$": "$.updateResult.expertResponse",
       },
     });
 
     // Define the main flow
-    const discussionFlow = askExpert.next(updateChat).next(incrementTurn).next(askLeader);
+    const discussionFlow = askExpert
+      .next(
+        new sfn.Pass(this, "Prepare Update", {
+          parameters: {
+            "chatId.$": "$.chatId",
+            "createdAt.$": "$.createdAt",
+            "leaderResponse.$": "$.leaderResponse",
+            "expertResponse.$": "$.expertResponse",
+            "currentTurn.$": "$.currentTurn",
+            "maxTurns.$": "$.maxTurns",
+          },
+        })
+      )
+      .next(updateChat)
+      .next(incrementTurn)
+      .next(askLeader);
 
     // Add success state
     const success = new sfn.Succeed(this, "Discussion Complete");
@@ -109,11 +124,23 @@ export class ExpertDiscussionStateMachine extends Construct {
       .when(
         sfn.Condition.and(
           sfn.Condition.booleanEquals("$.leaderResponse.discussionComplete", false),
-          sfn.Condition.stringLessThanEquals("$.currentTurn", "$.maxTurns")
+          sfn.Condition.numberLessThanEquals("$.currentTurn", 10)
         ),
         discussionFlow
       )
-      .otherwise(finalUpdateChat.next(success));
+      .otherwise(
+        new sfn.Pass(this, "Prepare Final Update", {
+          parameters: {
+            "chatId.$": "$.chatId",
+            "createdAt.$": "$.createdAt",
+            "leaderResponse.$": "$.leaderResponse",
+            "currentTurn.$": "$.currentTurn",
+            "maxTurns.$": "$.maxTurns",
+          },
+        })
+          .next(finalUpdateChat)
+          .next(success)
+      );
 
     // Create the state machine
     const definition = sfn.Chain.start(askLeader).next(shouldContinue);

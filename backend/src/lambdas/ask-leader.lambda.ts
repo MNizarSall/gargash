@@ -56,5 +56,10 @@ export const handler = async (event: Event) => {
       : "Based on the discussion above, what should be our next step?",
   ]);
 
+  // Ensure discussionComplete is set
+  if (leaderResponse.discussionComplete === undefined) {
+    leaderResponse.discussionComplete = false;
+  }
+
   return leaderResponse;
 };
