@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a serverless backend application deployed on AWS using CDK (Cloud Development Kit). The project implements a REST API using API Gateway and Lambda, with DynamoDB for data persistence. The application is written in TypeScript and follows modern serverless architecture patterns.
+This is a serverless backend application deployed on AWS using CDK (Cloud Development Kit). The project implements a REST API using API Gateway and Lambda, with DynamoDB for data persistence. The application is written in TypeScript and follows modern serverless architecture patterns. A key feature of the system is its extensible AI expert roles architecture, enabling conversations with specialized AI agents for different domains.
 
 ## Infrastructure Components
 
@@ -19,6 +19,16 @@ This is a serverless backend application deployed on AWS using CDK (Cloud Develo
 - Serverless architecture
 - REST API with CORS enabled
 - Production-grade logging and tracing
+
+## AI Expert Roles
+
+The system implements an extensible architecture for AI expert roles:
+
+- Each role represents a specialized AI agent with domain-specific expertise
+- Roles are defined through TypeScript constants converted from prompt templates
+- The architecture allows for easy addition of new expert roles
+- Expert roles are integrated into the chat system with consistent interfaces
+- DynamoDB schema supports role-based message storage and retrieval
 
 ## API Endpoints
 
