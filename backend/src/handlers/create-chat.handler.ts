@@ -7,7 +7,7 @@ import { ZodError } from "zod";
 import { headers } from "../utils/http.utils";
 import { createAIWithRole } from "../clients/open-ai.client";
 import { Message, Chat } from "../models/chat.model";
-import { SALES_EXPERT_PROMPT } from "../prompts/sales-expert";
+import { SALES_EXPERT_PROMPT } from "../prompts/sales-expert.prompt";
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
