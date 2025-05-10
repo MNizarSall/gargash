@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "./ui/textarea";
+import { redirect } from "next/navigation";
 
 const formSchema = z.object({
   prompt: z.string().min(2, {
@@ -28,24 +29,31 @@ export default function ProfileForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/chats`, {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chats`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(values),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (!data.success) {
-          throw new Error(data.message || "Failed to send message");
-        }
-        form.reset();
-      })
-      .catch((error) => {
-        console.error("Error sending message:", error);
-      });
+    });
+    console.log(response.status);
+    if (response.status === 201) {
+      const { id } = await response.json();
+      redirect(`/chats/${id}`);
+    }
+
+    // .then((response) => response.json())
+    // .then((data) => {
+    //   // redirect to /chats/[id]
+    //   if (!data.success) {
+    //     throw new Error(data.message || "Failed to send message");
+    //   }
+    //   form.reset();
+    // })
+    // .catch((error) => {
+    //   console.error("Error sending message:", error);
+    // });
   }
 
   return (

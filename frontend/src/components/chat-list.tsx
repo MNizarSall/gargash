@@ -36,7 +36,6 @@ export default function ChatList() {
   }, [nextToken, isLoading]);
 
   useEffect(() => {
-    console.log("initial");
     fetchChats();
   }, []);
 
@@ -48,7 +47,6 @@ export default function ChatList() {
     observer.current = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && nextToken && !isLoading) {
-          console.log("fetch again");
           fetchChats();
         }
       },
