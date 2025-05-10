@@ -1,6 +1,11 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  PutCommand,
+  QueryCommand,
+  ScanCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 import { Chat, mockChats } from "./models/chat.model";
 import { startChatSchema, startChatResponseSchema } from "./schemas/start-chat.schema";
@@ -18,6 +23,9 @@ const headers = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
+// Default page size for pagination
+const DEFAULT_PAGE_SIZE = 10;
+
 /**
  * AWS Lambda handler for API Gateway requests
  * @param event - The API Gateway event
@@ -29,17 +37,54 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     // @ts-expect-error operationName exists in API Gateway events but is not in the types
     switch (event.requestContext.operationName) {
-      case "ListChats":
+      case "ListChats": {
+        // Parse pagination parameters
+        const limit = event.queryStringParameters?.limit
+          ? Math.min(parseInt(event.queryStringParameters.limit, 10), 50)
+          : DEFAULT_PAGE_SIZE;
+
+        let startKey: Record<string, any> | undefined;
+        if (event.queryStringParameters?.nextToken) {
+          try {
+            startKey = JSON.parse(
+              Buffer.from(event.queryStringParameters.nextToken, "base64").toString()
+            );
+          } catch (e) {
+            return {
+              statusCode: 400,
+              headers,
+              body: JSON.stringify({ error: "Invalid pagination token" }),
+            };
+          }
+        }
+
+        // Scan DynamoDB for all chats with pagination
+        const result = await docClient.send(
+          new ScanCommand({
+            TableName: process.env.DYNAMODB_TABLE,
+            Limit: limit,
+            ExclusiveStartKey: startKey,
+          })
+        );
+
+        // Prepare the next token if there are more items
+        const nextToken = result.LastEvaluatedKey
+          ? Buffer.from(JSON.stringify(result.LastEvaluatedKey)).toString("base64")
+          : undefined;
+
         return {
           statusCode: 200,
           headers,
-          body: JSON.stringify(
-            mockChats.map(({ id, prompt }) => ({
-              id,
-              prompt,
-            }))
-          ),
+          body: JSON.stringify({
+            items: (result.Items || []).map(item => ({
+              id: item.ChatId,
+              prompt: item.Prompt,
+              createdAt: item.CreatedAt,
+            })),
+            nextToken,
+          }),
         };
+      }
 
       case "CreateChat": {
         try {
@@ -95,11 +140,32 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         }
       }
 
-      case "GetChat":
+      case "GetChat": {
         const chatId = event.pathParameters?.id;
-        const chat = mockChats.find(c => c.id === chatId);
+        if (!chatId) {
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({ error: "Chat ID is required" }),
+          };
+        }
 
-        if (!chat) {
+        // Get chat from DynamoDB
+        const result = await docClient.send(
+          new QueryCommand({
+            TableName: process.env.DYNAMODB_TABLE,
+            KeyConditionExpression: "#chatId = :chatId",
+            ExpressionAttributeNames: {
+              "#chatId": "ChatId",
+            },
+            ExpressionAttributeValues: {
+              ":chatId": chatId,
+            },
+            Limit: 1,
+          })
+        );
+
+        if (!result.Items?.[0]) {
           return {
             statusCode: 404,
             headers,
@@ -107,11 +173,17 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           };
         }
 
+        const chat = result.Items[0];
         return {
           statusCode: 200,
           headers,
-          body: JSON.stringify(chat),
+          body: JSON.stringify({
+            id: chat.ChatId,
+            prompt: chat.Prompt,
+            createdAt: chat.CreatedAt,
+          }),
         };
+      }
 
       default:
         return {
