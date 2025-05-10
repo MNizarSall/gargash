@@ -22,7 +22,9 @@ export default async function ChatPage({
         <div className="flex flex-col space-y-6">
           <Discussions discussions={result.discussion} />
 
-          <ConclusionMessage message={result.conclusion} />
+          {result.conclusion && (
+            <ConclusionMessage message={result.conclusion} />
+          )}
 
           {result.status === "CONTINUES" && <Skeleton className="h-8 w-full" />}
         </div>
