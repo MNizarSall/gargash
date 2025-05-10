@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { headers } from "../utils/http.utils";
 
 const client = new DynamoDBClient({});
@@ -29,30 +29,55 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
   }
 
-  // Scan DynamoDB for all chats with pagination
-  const result = await docClient.send(
-    new ScanCommand({
-      TableName: process.env.DYNAMODB_TABLE,
-      Limit: limit,
-      ExclusiveStartKey: startKey,
-    })
-  );
+  try {
+    // Query DynamoDB using the CreatedAt-index in descending order
+    const result = await docClient.send(
+      new QueryCommand({
+        TableName: process.env.DYNAMODB_TABLE,
+        IndexName: "CreatedAtIndex",
+        KeyConditionExpression: "#type = :type",
+        ExpressionAttributeNames: {
+          "#type": "Type",
+          "#createdAt": "CreatedAt",
+          "#chatId": "ChatId",
+          "#prompt": "Prompt",
+        },
+        ExpressionAttributeValues: {
+          ":type": "CHAT",
+        },
+        ProjectionExpression: "#chatId, #type, #createdAt, #prompt",
+        ScanIndexForward: false, // This makes it DESC order
+        Limit: limit,
+        ExclusiveStartKey: startKey,
+      })
+    );
 
-  // Prepare the next token if there are more items
-  const nextToken = result.LastEvaluatedKey
-    ? Buffer.from(JSON.stringify(result.LastEvaluatedKey)).toString("base64")
-    : undefined;
+    // Prepare the next token if there are more items
+    const nextToken = result.LastEvaluatedKey
+      ? Buffer.from(JSON.stringify(result.LastEvaluatedKey)).toString("base64")
+      : undefined;
 
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({
-      items: (result.Items || []).map(item => ({
-        id: item.ChatId,
-        prompt: item.Prompt,
-        createdAt: item.CreatedAt,
-      })),
-      nextToken,
-    }),
-  };
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        items: (result.Items || []).map(item => ({
+          id: item.ChatId,
+          prompt: item.Prompt,
+          createdAt: item.CreatedAt,
+        })),
+        nextToken,
+      }),
+    };
+  } catch (error) {
+    console.error("DynamoDB Query Error:", error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error occurred",
+      }),
+    };
+  }
 };

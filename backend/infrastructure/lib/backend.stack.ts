@@ -38,7 +38,10 @@ export class BackendStack extends cdk.Stack {
           "dynamodb:UpdateItem",
           "dynamodb:DeleteItem",
         ],
-        resources: [`arn:aws:dynamodb:${this.region}:${this.account}:table/Gargash`],
+        resources: [
+          `arn:aws:dynamodb:${this.region}:${this.account}:table/Gargash`,
+          `arn:aws:dynamodb:${this.region}:${this.account}:table/Gargash/index/*`,
+        ],
       })
     );
 

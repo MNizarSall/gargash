@@ -26,6 +26,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           ChatId: chatId,
           CreatedAt: timestamp,
           Prompt: validatedData.prompt,
+          Type: "CHAT",
         },
       })
     );
