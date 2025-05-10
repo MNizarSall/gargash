@@ -57,17 +57,13 @@ export default function ProfileForm() {
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Textarea
-                  placeholder="Type your message here..."
-                  {...field}
-                ></Textarea>
+                <Textarea placeholder="Ask anything" {...field}></Textarea>
               </FormControl>
-
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        <Button type="submit">Send</Button>
       </form>
     </Form>
   );
