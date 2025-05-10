@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { SFNClient, StartExecutionCommand } from "@aws-sdk/client-sfn";
 import { v4 as uuidv4 } from "uuid";
 import { startChatSchema } from "../schemas/start-chat.schema";
 import { ZodError } from "zod";
@@ -9,6 +10,7 @@ import { Chat, DiscussionStatus } from "../models/chat.model";
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
+const sfnClient = new SFNClient({});
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -37,6 +39,20 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           Type: "CHAT",
           Status: DiscussionStatus.STARTED,
         },
+      })
+    );
+
+    // Start the state machine execution
+    await sfnClient.send(
+      new StartExecutionCommand({
+        stateMachineArn: process.env.EXPERT_DISCUSSION_STATE_MACHINE_ARN,
+        input: JSON.stringify({
+          chatId,
+          createdAt: timestamp,
+          prompt: validatedData.prompt,
+          currentTurn: 0,
+          maxTurns: 10,
+        }),
       })
     );
 

@@ -6,6 +6,7 @@ import * as nodejs from "aws-cdk-lib/aws-lambda-nodejs";
 import * as iam from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
 import { Duration } from "aws-cdk-lib";
+import { ExpertDiscussionStateMachine } from "./expert-discussion.statemachine";
 
 interface BackendStackProps extends cdk.StackProps {
   openAiApiKey: string;
@@ -45,23 +46,44 @@ export class BackendStack extends cdk.Stack {
       timeout: Duration.seconds(30),
     });
 
+    // Create Expert Discussion State Machine
+    const expertDiscussion = new ExpertDiscussionStateMachine(this, "ExpertDiscussion", {
+      tableName: "Gargash",
+    });
+
     // Grant DynamoDB permissions
+    const dynamoPermissions = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: [
+        "dynamodb:PutItem",
+        "dynamodb:GetItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+      ],
+      resources: [
+        `arn:aws:dynamodb:${this.region}:${this.account}:table/Gargash`,
+        `arn:aws:dynamodb:${this.region}:${this.account}:table/Gargash/index/*`,
+      ],
+    });
+
+    // Add permissions to handler Lambda
+    handler.addToRolePolicy(dynamoPermissions);
+
+    // Add permissions to start state machine execution
     handler.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: [
-          "dynamodb:PutItem",
-          "dynamodb:GetItem",
-          "dynamodb:Query",
-          "dynamodb:Scan",
-          "dynamodb:UpdateItem",
-          "dynamodb:DeleteItem",
-        ],
-        resources: [
-          `arn:aws:dynamodb:${this.region}:${this.account}:table/Gargash`,
-          `arn:aws:dynamodb:${this.region}:${this.account}:table/Gargash/index/*`,
-        ],
+        actions: ["states:StartExecution"],
+        resources: [expertDiscussion.stateMachine.stateMachineArn],
       })
+    );
+
+    // Add environment variable for state machine ARN
+    handler.addEnvironment(
+      "EXPERT_DISCUSSION_STATE_MACHINE_ARN",
+      expertDiscussion.stateMachine.stateMachineArn
     );
 
     // Create API Gateway with increased timeout
@@ -145,6 +167,12 @@ export class BackendStack extends cdk.Stack {
     new cdk.CfnOutput(this, "ApiUrl", {
       value: api.url,
       description: "API Gateway endpoint URL",
+    });
+
+    // Add State Machine ARN to outputs
+    new cdk.CfnOutput(this, "StateMachineArn", {
+      value: expertDiscussion.stateMachine.stateMachineArn,
+      description: "Expert Discussion State Machine ARN",
     });
   }
 }
