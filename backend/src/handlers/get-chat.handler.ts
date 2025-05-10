@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { headers } from "../utils/http.utils";
+import { Chat } from "../models/chat.model";
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
@@ -39,14 +40,17 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     };
   }
 
-  const chat = result.Items[0];
+  const item = result.Items[0];
+  const chat: Chat = {
+    id: item.ChatId,
+    prompt: item.Prompt,
+    createdAt: item.CreatedAt,
+    discussion: item.Discussion || [],
+  };
+
   return {
     statusCode: 200,
     headers,
-    body: JSON.stringify({
-      id: chat.ChatId,
-      prompt: chat.Prompt,
-      createdAt: chat.CreatedAt,
-    }),
+    body: JSON.stringify(chat),
   };
 };

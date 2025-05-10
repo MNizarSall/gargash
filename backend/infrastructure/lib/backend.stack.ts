@@ -5,9 +5,14 @@ import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as nodejs from "aws-cdk-lib/aws-lambda-nodejs";
 import * as iam from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
+import { Duration } from "aws-cdk-lib";
+
+interface BackendStackProps extends cdk.StackProps {
+  openAiApiKey: string;
+}
 
 export class BackendStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: BackendStackProps) {
     super(scope, id, props);
 
     // Create Lambda function
@@ -20,10 +25,24 @@ export class BackendStack extends cdk.Stack {
         sourceMap: true,
         target: "node20",
         format: nodejs.OutputFormat.ESM,
+        mainFields: ["module", "main"],
+        esbuildArgs: {
+          "--platform": "node",
+          "--conditions": "module,import,require",
+        },
+        nodeModules: ["openai"], // Bundle openai package
+        externalModules: [
+          "@aws-sdk/*", // Keep AWS SDK external
+        ],
       },
       environment: {
         DYNAMODB_TABLE: "Gargash",
+        OPENAI_API_KEY: props.openAiApiKey,
+        NODE_OPTIONS: "--enable-source-maps",
       },
+      // Increase memory and timeout
+      memorySize: 256,
+      timeout: Duration.seconds(30),
     });
 
     // Grant DynamoDB permissions
@@ -45,7 +64,7 @@ export class BackendStack extends cdk.Stack {
       })
     );
 
-    // Create API Gateway
+    // Create API Gateway with increased timeout
     const api = new apigateway.RestApi(this, "BackendApi", {
       restApiName: "Backend Service",
       description: "Backend service API Gateway",
@@ -62,6 +81,11 @@ export class BackendStack extends cdk.Stack {
       },
     });
 
+    // Configure API Gateway timeout
+    const integrationOptions: apigateway.IntegrationOptions = {
+      timeout: Duration.seconds(29), // Should be slightly less than Lambda timeout
+    };
+
     // Create /api/chats resource
     const chats = api.root.addResource("api").addResource("chats");
 
@@ -69,6 +93,7 @@ export class BackendStack extends cdk.Stack {
     chats.addMethod(
       "GET",
       new apigateway.LambdaIntegration(handler, {
+        ...integrationOptions,
         requestTemplates: {
           "application/json": JSON.stringify({
             operationName: "ListChats",
@@ -85,6 +110,7 @@ export class BackendStack extends cdk.Stack {
     chats.addMethod(
       "POST",
       new apigateway.LambdaIntegration(handler, {
+        ...integrationOptions,
         requestTemplates: {
           "application/json": JSON.stringify({
             operationName: "CreateChat",
@@ -102,6 +128,7 @@ export class BackendStack extends cdk.Stack {
     chat.addMethod(
       "GET",
       new apigateway.LambdaIntegration(handler, {
+        ...integrationOptions,
         requestTemplates: {
           "application/json": JSON.stringify({
             operationName: "GetChat",
