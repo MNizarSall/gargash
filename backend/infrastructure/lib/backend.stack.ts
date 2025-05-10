@@ -49,6 +49,7 @@ export class BackendStack extends cdk.Stack {
     // Create Expert Discussion State Machine
     const expertDiscussion = new ExpertDiscussionStateMachine(this, "ExpertDiscussion", {
       tableName: "Gargash",
+      openAiApiKey: props.openAiApiKey,
     });
 
     // Grant DynamoDB permissions
