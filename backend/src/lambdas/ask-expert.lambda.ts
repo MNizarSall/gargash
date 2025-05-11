@@ -46,8 +46,8 @@ export const handler = async (event: Event) => {
     chat.discussion?.map(msg => {
       const rolePrefix =
         msg.role === "leader" && msg.targetExpert
-          ? `[LEADER → ${msg.targetExpert.toUpperCase()}]`
-          : `[${msg.role.toUpperCase()}]`;
+          ? `[${msg.role} → ${msg.targetExpert}]`
+          : `[${msg.role}]`;
       return `${rolePrefix}: ${msg.content}`;
     }) || [];
 

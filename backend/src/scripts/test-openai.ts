@@ -22,8 +22,8 @@ const formatHistoryForPrompt = (history: Message[]): string[] => {
   return history.map(msg => {
     const rolePrefix =
       msg.role === ExpertRole.LEADER && msg.targetExpert
-        ? `[${msg.role.toUpperCase()} → ${msg.targetExpert.toUpperCase()}]`
-        : `[${msg.role.toUpperCase()}]`;
+        ? `[${msg.role} → ${msg.targetExpert}]`
+        : `[${msg.role}]`;
     return `${rolePrefix}: ${msg.content}`;
   });
 };
@@ -115,7 +115,7 @@ async function conductExpertDiscussion(initialQuery: string, maxTurns: number = 
       await saveChat(chat);
 
       console.log(
-        `Leader → ${leaderResponse.targetExpert.toUpperCase()}: ${leaderResponse.message}`
+        `${ExpertRole.LEADER} → ${leaderResponse.targetExpert}: ${leaderResponse.message}`
       );
 
       // Validate expert role
@@ -135,7 +135,7 @@ async function conductExpertDiscussion(initialQuery: string, maxTurns: number = 
       chat.discussion = [...chat.discussion, expertMessage];
       await saveChat(chat);
 
-      console.log(`${leaderResponse.targetExpert.toUpperCase()}: ${expertResponse.message}`);
+      console.log(`${leaderResponse.targetExpert}: ${expertResponse.message}`);
 
       // Check if discussion is complete after getting expert's response
       if (leaderResponse.discussionComplete) {
@@ -163,15 +163,15 @@ async function conductExpertDiscussion(initialQuery: string, maxTurns: number = 
     chat.status = DiscussionStatus.CONCLUDED;
     await saveChat(chat);
 
-    console.log(`Leader's Conclusion: ${finalLeaderResponse.message}`);
+    console.log(`${ExpertRole.LEADER}'s Conclusion: ${finalLeaderResponse.message}`);
 
     // Print final summary
     console.log("\nFinal Conversation Summary:");
     chat.discussion?.forEach(msg => {
       const rolePrefix =
         msg.role === ExpertRole.LEADER && msg.targetExpert
-          ? `[${msg.role.toUpperCase()} → ${msg.targetExpert.toUpperCase()}]`
-          : `[${msg.role.toUpperCase()}]`;
+          ? `[${msg.role} → ${msg.targetExpert}]`
+          : `[${msg.role}]`;
       console.log(`\n${rolePrefix}: ${msg.content}`);
     });
     console.log("\nConclusion:", chat.conclusion);
