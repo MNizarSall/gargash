@@ -5,9 +5,9 @@ export default function ChatListItem({ chat }: { chat: Chat }) {
   return (
     <Link
       href={`/chats/${chat.id}`}
-      className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex flex-col items-start gap-2 border-b p-4 text-sm leading-tight whitespace-nowrap last:border-b-0"
+      className="flex flex-col items-start gap-2 whitespace-nowrap border-b border-[#5c3a92] p-4 text-sm leading-tight last:border-b-0 hover:bg-[#5c3a92] hover:text-[#d5b26b]"
     >
-      <span className="line-clamp-2 w-[260px] text-xs whitespace-break-spaces">
+      <span className="line-clamp-2 w-[260px] whitespace-break-spaces text-xs text-purple-200">
         {chat.prompt}
       </span>
     </Link>

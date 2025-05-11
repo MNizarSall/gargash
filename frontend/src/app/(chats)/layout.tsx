@@ -24,6 +24,14 @@ export default function ChatsLayout({
       style={
         {
           "--sidebar-width": "350px",
+          "--sidebar-background": "hsl(270 60% 20%)",
+          "--sidebar-foreground": "hsl(36 50% 75%)",
+          "--sidebar-primary": "hsl(36 50% 65%)",
+          "--sidebar-primary-foreground": "hsl(270 60% 20%)",
+          "--sidebar-accent": "hsl(270 50% 30%)",
+          "--sidebar-accent-foreground": "hsl(36 50% 75%)",
+          "--sidebar-border": "hsl(270 50% 30%)",
+          "--sidebar-ring": "hsl(36 50% 65%)",
         } as React.CSSProperties
       }
     >
