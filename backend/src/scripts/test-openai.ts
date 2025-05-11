@@ -203,5 +203,5 @@ async function conductExpertDiscussion(initialQuery: string, maxTurns: number = 
 
 // Run the test with an initial query
 conductExpertDiscussion(
-  "I need help improving our company's sales process while ensuring legal compliance and maintaining employee satisfaction. Can you help?"
+  "Our luxury car dealership is planning to expand into Dubai, Singapore, and Monaco simultaneously. We need a comprehensive strategy covering sales targets, legal compliance, and staffing requirements. Specifically, we need to determine: 1. Sales forecasts and premium customer acquisition strategies for each market 2. Local regulatory requirements, licensing, and compliance frameworks 3. Recruitment, training, and compensation structures for local teams 4. Cross-border inventory management and pricing strategies 5. Local partnership opportunities and contractual obligations 6. Employee relocation and visa requirements for key personnel"
 );
