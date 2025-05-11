@@ -40,6 +40,7 @@ export class ExpertDiscussionStateMachine extends Construct {
         DYNAMODB_TABLE: props.tableName,
         OPENAI_API_KEY: props.openAiApiKey,
       },
+      timeout: cdk.Duration.seconds(30),
     });
     askLeaderFunction.addToRolePolicy(dynamoPermissions);
 
@@ -49,6 +50,7 @@ export class ExpertDiscussionStateMachine extends Construct {
         DYNAMODB_TABLE: props.tableName,
         OPENAI_API_KEY: props.openAiApiKey,
       },
+      timeout: cdk.Duration.seconds(30),
     });
     askExpertFunction.addToRolePolicy(dynamoPermissions);
 
@@ -57,6 +59,7 @@ export class ExpertDiscussionStateMachine extends Construct {
       environment: {
         DYNAMODB_TABLE: props.tableName,
       },
+      timeout: cdk.Duration.seconds(30),
     });
     updateChatFunction.addToRolePolicy(dynamoPermissions);
 
@@ -124,7 +127,7 @@ export class ExpertDiscussionStateMachine extends Construct {
       .when(
         sfn.Condition.and(
           sfn.Condition.booleanEquals("$.leaderResponse.discussionComplete", false),
-          sfn.Condition.numberLessThanEquals("$.currentTurn", 10)
+          sfn.Condition.numberLessThanEquals("$.currentTurn", 20)
         ),
         discussionFlow
       )

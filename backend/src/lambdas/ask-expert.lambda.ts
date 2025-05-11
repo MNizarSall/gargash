@@ -37,6 +37,7 @@ export const handler = async (event: Event) => {
     prompt: result.Item.Prompt,
     createdAt: result.Item.CreatedAt,
     status: result.Item.Status,
+    availableExperts: result.Item.AvailableExperts,
     discussion: result.Item.Discussion || [],
     conclusion: result.Item.Conclusion,
   };
@@ -46,26 +47,21 @@ export const handler = async (event: Event) => {
     chat.discussion?.map(msg => {
       const rolePrefix =
         msg.role === "leader" && msg.targetExpert
-          ? `[LEADER → ${msg.targetExpert.toUpperCase()}]`
-          : `[${msg.role.toUpperCase()}]`;
+          ? `[${msg.role} → ${msg.targetExpert}]`
+          : `[${msg.role}]`;
       return `${rolePrefix}: ${msg.content}`;
     }) || [];
 
-  // Ask the targeted expert
-  let expertResponse;
-  switch (event.leaderResponse.targetExpert) {
-    case ExpertRole.SALES:
-      expertResponse = await AIExperts.askSales([...history, event.leaderResponse.message]);
-      break;
-    case ExpertRole.LEGAL:
-      expertResponse = await AIExperts.askLegal([...history, event.leaderResponse.message]);
-      break;
-    case ExpertRole.HR:
-      expertResponse = await AIExperts.askHR([...history, event.leaderResponse.message]);
-      break;
-    default:
-      throw new Error(`Unknown expert role: ${event.leaderResponse.targetExpert}`);
+  // Validate expert role
+  if (event.leaderResponse.targetExpert === ExpertRole.LEADER) {
+    throw new Error("Cannot ask leader in expert lambda");
   }
+
+  // Ask the targeted expert using the dynamic method
+  const expertResponse = await AIExperts.askExpert(event.leaderResponse.targetExpert, [
+    ...history,
+    event.leaderResponse.message,
+  ]);
 
   return expertResponse;
 };

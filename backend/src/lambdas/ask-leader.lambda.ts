@@ -1,6 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
-import { AIExperts } from "../clients/ai-experts";
+import { AIExperts, ExpertRole, NonLeaderExpertRole } from "../clients/ai-experts";
 import { Chat } from "../models/chat.model";
 
 const client = new DynamoDBClient({});
@@ -34,6 +34,7 @@ export const handler = async (event: Event) => {
     prompt: result.Item.Prompt,
     createdAt: result.Item.CreatedAt,
     status: result.Item.Status,
+    availableExperts: result.Item.AvailableExperts,
     discussion: result.Item.Discussion || [],
     conclusion: result.Item.Conclusion,
   };
@@ -43,18 +44,21 @@ export const handler = async (event: Event) => {
     chat.discussion?.map(msg => {
       const rolePrefix =
         msg.role === "leader" && msg.targetExpert
-          ? `[LEADER → ${msg.targetExpert.toUpperCase()}]`
-          : `[${msg.role.toUpperCase()}]`;
+          ? `[${msg.role} → ${msg.targetExpert}]`
+          : `[${msg.role}]`;
       return `${rolePrefix}: ${msg.content}`;
     }) || [];
 
   // Ask leader for next steps
-  const leaderResponse = await AIExperts.askLeader([
-    ...history,
-    event.currentTurn === 0
-      ? event.prompt
-      : "Based on the discussion above, what should be our next step?",
-  ]);
+  const leaderResponse = await AIExperts.askLeader(
+    [
+      ...history,
+      event.currentTurn === 0
+        ? event.prompt
+        : "Based on the discussion above, what should be our next step?",
+    ],
+    chat.availableExperts as NonLeaderExpertRole[]
+  );
 
   // Ensure discussionComplete is set
   if (leaderResponse.discussionComplete === undefined) {

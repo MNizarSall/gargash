@@ -3,19 +3,19 @@ import { join } from "path";
 import { v4 as uuidv4 } from "uuid";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
-import {
-  AIExperts,
-  ExpertRole,
-  LeaderResponse,
-  SalesResponse,
-  LegalResponse,
-  HRResponse,
-} from "../clients/ai-experts";
+import { AIExperts, ExpertRole, NonLeaderExpertRole } from "../clients/ai-experts";
 import { Chat, Message, DiscussionStatus } from "../models/chat.model";
 import { fromIni } from "@aws-sdk/credential-providers";
 
 // Load environment variables from .env file
 config({ path: join(process.cwd(), ".env") });
+
+// Define available HR experts
+const HR_EXPERTS: NonLeaderExpertRole[] = [
+  ExpertRole.HR_OPS_ADMIN,
+  ExpertRole.PAYROLL_BENEFITS,
+  ExpertRole.RECRUITMENT,
+];
 
 // Initialize DynamoDB client
 const client = new DynamoDBClient({
@@ -24,15 +24,13 @@ const client = new DynamoDBClient({
 });
 const docClient = DynamoDBDocumentClient.from(client);
 
-type ExpertResponse = LeaderResponse | SalesResponse | LegalResponse | HRResponse;
-
 // Format conversation history for the next message
 const formatHistoryForPrompt = (history: Message[]): string[] => {
   return history.map(msg => {
     const rolePrefix =
       msg.role === ExpertRole.LEADER && msg.targetExpert
-        ? `[${msg.role.toUpperCase()} → ${msg.targetExpert.toUpperCase()}]`
-        : `[${msg.role.toUpperCase()}]`;
+        ? `[${msg.role} → ${msg.targetExpert}]`
+        : `[${msg.role}]`;
     return `${rolePrefix}: ${msg.content}`;
   });
 };
@@ -47,6 +45,7 @@ async function saveChat(chat: Chat): Promise<void> {
         Prompt: chat.prompt,
         Type: "CHAT",
         Status: chat.status,
+        AvailableExperts: chat.availableExperts,
         Discussion: chat.discussion || [],
         Conclusion: chat.conclusion,
       },
@@ -72,6 +71,7 @@ async function getChat(chatId: string, createdAt: number): Promise<Chat | null> 
     prompt: result.Item.Prompt,
     createdAt: result.Item.CreatedAt,
     status: result.Item.Status,
+    availableExperts: result.Item.AvailableExperts || HR_EXPERTS,
     discussion: result.Item.Discussion || [],
     conclusion: result.Item.Conclusion,
   };
@@ -86,6 +86,7 @@ async function conductExpertDiscussion(initialQuery: string, maxTurns: number = 
     prompt: initialQuery,
     createdAt, // Use the stored timestamp
     status: DiscussionStatus.STARTED,
+    availableExperts: HR_EXPERTS,
     discussion: [],
   };
   await saveChat(initialChat);
@@ -102,16 +103,19 @@ async function conductExpertDiscussion(initialQuery: string, maxTurns: number = 
       console.log(`\n=== Turn ${currentTurn} ===\n`);
 
       // Get current chat state
-      const chat = await getChat(chatId, createdAt); // Pass the timestamp
+      const chat = await getChat(chatId, createdAt);
       if (!chat) throw new Error("Chat not found");
 
       // Ask leader for next steps
-      const leaderResponse = await AIExperts.askLeader([
-        ...formatHistoryForPrompt(chat.discussion || []),
-        currentTurn === 1
-          ? initialQuery
-          : "Based on the discussion above, what should be our next step?",
-      ]);
+      const leaderResponse = await AIExperts.askLeader(
+        [
+          ...formatHistoryForPrompt(chat.discussion || []),
+          currentTurn === 1
+            ? initialQuery
+            : "Based on the discussion above, what should be our next step?",
+        ],
+        HR_EXPERTS
+      );
 
       // Add leader's message to discussion
       const leaderMessage: Message = {
@@ -124,26 +128,17 @@ async function conductExpertDiscussion(initialQuery: string, maxTurns: number = 
       await saveChat(chat);
 
       console.log(
-        `Leader → ${leaderResponse.targetExpert.toUpperCase()}: ${leaderResponse.message}`
+        `${ExpertRole.LEADER} → ${leaderResponse.targetExpert}: ${leaderResponse.message}`
       );
 
-      // Consult the targeted expert
-      const expertMessages = [...formatHistoryForPrompt(chat.discussion), leaderResponse.message];
-
-      let expertResponse: ExpertResponse;
-      switch (leaderResponse.targetExpert) {
-        case ExpertRole.SALES:
-          expertResponse = await AIExperts.askSales(expertMessages);
-          break;
-        case ExpertRole.LEGAL:
-          expertResponse = await AIExperts.askLegal(expertMessages);
-          break;
-        case ExpertRole.HR:
-          expertResponse = await AIExperts.askHR(expertMessages);
-          break;
-        default:
-          throw new Error(`Unknown expert role: ${leaderResponse.targetExpert}`);
+      // Validate expert role
+      if (leaderResponse.targetExpert === ExpertRole.LEADER) {
+        throw new Error("Leader cannot be targeted as an expert");
       }
+
+      // Consult the targeted expert using the dynamic method
+      const expertMessages = [...formatHistoryForPrompt(chat.discussion), leaderResponse.message];
+      const expertResponse = await AIExperts.askExpert(leaderResponse.targetExpert, expertMessages);
 
       // Add expert's message to discussion
       const expertMessage: Message = {
@@ -153,7 +148,7 @@ async function conductExpertDiscussion(initialQuery: string, maxTurns: number = 
       chat.discussion = [...chat.discussion, expertMessage];
       await saveChat(chat);
 
-      console.log(`${leaderResponse.targetExpert.toUpperCase()}: ${expertResponse.message}`);
+      console.log(`${leaderResponse.targetExpert}: ${expertResponse.message}`);
 
       // Check if discussion is complete after getting expert's response
       if (leaderResponse.discussionComplete) {
@@ -171,25 +166,28 @@ async function conductExpertDiscussion(initialQuery: string, maxTurns: number = 
     const chat = await getChat(chatId, createdAt);
     if (!chat) throw new Error("Chat not found");
 
-    const finalLeaderResponse = await AIExperts.askLeader([
-      ...formatHistoryForPrompt(chat.discussion || []),
-      "Please provide a final conclusion summarizing the discussion and key recommendations.",
-    ]);
+    const finalLeaderResponse = await AIExperts.askLeader(
+      [
+        ...formatHistoryForPrompt(chat.discussion || []),
+        "Please provide a final conclusion summarizing the discussion and key recommendations.",
+      ],
+      HR_EXPERTS
+    );
 
     // Add conclusion to chat
     chat.conclusion = finalLeaderResponse.message;
     chat.status = DiscussionStatus.CONCLUDED;
     await saveChat(chat);
 
-    console.log(`Leader's Conclusion: ${finalLeaderResponse.message}`);
+    console.log(`${ExpertRole.LEADER}'s Conclusion: ${finalLeaderResponse.message}`);
 
     // Print final summary
     console.log("\nFinal Conversation Summary:");
     chat.discussion?.forEach(msg => {
       const rolePrefix =
         msg.role === ExpertRole.LEADER && msg.targetExpert
-          ? `[${msg.role.toUpperCase()} → ${msg.targetExpert.toUpperCase()}]`
-          : `[${msg.role.toUpperCase()}]`;
+          ? `[${msg.role} → ${msg.targetExpert}]`
+          : `[${msg.role}]`;
       console.log(`\n${rolePrefix}: ${msg.content}`);
     });
     console.log("\nConclusion:", chat.conclusion);
@@ -201,7 +199,7 @@ async function conductExpertDiscussion(initialQuery: string, maxTurns: number = 
   }
 }
 
-// Run the test with an initial query
+// Run the test with an HR-focused initial query
 conductExpertDiscussion(
-  "Our luxury car dealership is planning to expand into Dubai, Singapore, and Monaco simultaneously. We need a comprehensive strategy covering sales targets, legal compliance, and staffing requirements. Specifically, we need to determine: 1. Sales forecasts and premium customer acquisition strategies for each market 2. Local regulatory requirements, licensing, and compliance frameworks 3. Recruitment, training, and compensation structures for local teams 4. Cross-border inventory management and pricing strategies 5. Local partnership opportunities and contractual obligations 6. Employee relocation and visa requirements for key personnel"
+  "We need to establish a new HR department for our luxury car dealership expansion in Dubai. We need to: 1. Set up HR operations and administrative systems 2. Design competitive compensation and benefits packages 3. Create a recruitment strategy for local talent. Please provide comprehensive recommendations for each area."
 );

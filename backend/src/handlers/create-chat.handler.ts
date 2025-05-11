@@ -26,6 +26,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       prompt: validatedData.prompt,
       createdAt: timestamp,
       status: DiscussionStatus.STARTED,
+      availableExperts: validatedData.availableExperts,
     };
 
     // Create new chat in DynamoDB
@@ -38,6 +39,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           Prompt: validatedData.prompt,
           Type: "CHAT",
           Status: DiscussionStatus.STARTED,
+          AvailableExperts: validatedData.availableExperts,
         },
       })
     );
@@ -52,6 +54,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           prompt: validatedData.prompt,
           currentTurn: 0,
           maxTurns: 10,
+          availableExperts: validatedData.availableExperts,
         }),
       })
     );

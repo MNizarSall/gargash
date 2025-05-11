@@ -41,6 +41,7 @@ export const handler = async (event: Event) => {
     prompt: result.Item.Prompt,
     createdAt: result.Item.CreatedAt,
     status: result.Item.Status,
+    availableExperts: result.Item.AvailableExperts,
     discussion: result.Item.Discussion || [],
     conclusion: result.Item.Conclusion,
   };
@@ -81,6 +82,7 @@ export const handler = async (event: Event) => {
         Prompt: chat.prompt,
         Type: "CHAT",
         Status: status,
+        AvailableExperts: chat.availableExperts,
         Discussion: discussion,
         Conclusion: conclusion,
       },
