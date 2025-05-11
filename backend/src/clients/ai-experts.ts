@@ -2,7 +2,7 @@ import { openAIClient, Message } from "./open-ai.client";
 import { SALES_EXPERT_PROMPT } from "../prompts/sales-expert.prompt";
 import { LEGAL_EXPERT_PROMPT } from "../prompts/legal-expert.prompt";
 import { HR_EXPERT_PROMPT } from "../prompts/hr-expert.prompt";
-import { LEADER_EXPERT_PROMPT } from "../prompts/leader-expert.prompt";
+import { createLeaderExpertPrompt } from "../prompts/leader-expert.prompt";
 import { HR_OPS_ADMIN_EXPERT_PROMPT } from "../prompts/hr-ops-admin-expert.prompt";
 import { PAYROLL_BENEFITS_EXPERT_PROMPT } from "../prompts/payroll-benefits-expert.prompt";
 import { RECRUITMENT_SPECIALIST_PROMPT } from "../prompts/recruitment-specialist.prompt";
@@ -26,8 +26,10 @@ export interface LeaderResponse extends ExpertResponse {
   discussionComplete?: boolean;
 }
 
-const EXPERT_PROMPTS: Record<ExpertRole, string> = {
-  [ExpertRole.LEADER]: LEADER_EXPERT_PROMPT,
+export type NonLeaderExpertRole = Exclude<ExpertRole, ExpertRole.LEADER>;
+
+// Mapping of expert prompts (excluding leader which is handled separately)
+const EXPERT_PROMPTS: Record<NonLeaderExpertRole, string> = {
   [ExpertRole.SALES]: SALES_EXPERT_PROMPT,
   [ExpertRole.LEGAL]: LEGAL_EXPERT_PROMPT,
   [ExpertRole.HR]: HR_EXPERT_PROMPT,
@@ -44,28 +46,36 @@ export class AIExperts {
     ];
   }
 
-  static async askLeader(messages: string[]): Promise<LeaderResponse> {
+  static async askLeader(
+    messages: string[],
+    availableExperts: NonLeaderExpertRole[]
+  ): Promise<LeaderResponse> {
+    // Create dynamic leader prompt with provided available experts
+    const leaderPrompt = createLeaderExpertPrompt(availableExperts);
     const completion = await openAIClient.instance.complete(
-      this.createMessages(EXPERT_PROMPTS[ExpertRole.LEADER], messages)
+      this.createMessages(leaderPrompt, messages)
     );
 
     const content = completion.choices[0]?.message?.content;
     if (!content) throw new Error("No response from leader");
 
-    return JSON.parse(content);
+    const response = JSON.parse(content) as LeaderResponse;
+
+    // Validate that the leader only chose from available experts
+    if (!availableExperts.includes(response.targetExpert as NonLeaderExpertRole)) {
+      throw new Error(`Leader chose unavailable expert: ${response.targetExpert}`);
+    }
+
+    return response;
   }
 
-  static async askExpert(
-    role: Exclude<ExpertRole, ExpertRole.LEADER>,
-    messages: string[]
-  ): Promise<ExpertResponse> {
-    if (!EXPERT_PROMPTS[role]) {
+  static async askExpert(role: NonLeaderExpertRole, messages: string[]): Promise<ExpertResponse> {
+    const prompt = EXPERT_PROMPTS[role];
+    if (!prompt) {
       throw new Error(`Invalid expert role: ${role}`);
     }
 
-    const completion = await openAIClient.instance.complete(
-      this.createMessages(EXPERT_PROMPTS[role], messages)
-    );
+    const completion = await openAIClient.instance.complete(this.createMessages(prompt, messages));
 
     const content = completion.choices[0]?.message?.content;
     if (!content) throw new Error(`No response from ${role} expert`);

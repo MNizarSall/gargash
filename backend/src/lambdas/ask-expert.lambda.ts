@@ -37,6 +37,7 @@ export const handler = async (event: Event) => {
     prompt: result.Item.Prompt,
     createdAt: result.Item.CreatedAt,
     status: result.Item.Status,
+    availableExperts: result.Item.AvailableExperts,
     discussion: result.Item.Discussion || [],
     conclusion: result.Item.Conclusion,
   };

@@ -15,6 +15,7 @@ export interface Chat {
   prompt: string;
   createdAt: number;
   status: DiscussionStatus;
+  availableExperts: string[];
   discussion?: Message[];
   conclusion?: string;
 }
