@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/sidebar";
 import ChatList from "./chat-list";
 import Image from "next/image";
+import Link from "next/link";
+import { Button } from "./ui/button";
 
 // This is sample data
 const data = {
@@ -82,7 +84,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 asChild
                 className="md:h-8 md:p-0 text-[#d5b26b]"
               >
-                <a href="#">
+                <Link href="/">
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-[#d5b26b] text-[#3a1c70]">
                     <Command className="size-4" />
                   </div>
@@ -92,7 +94,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       Enterprise
                     </span>
                   </div>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -139,8 +141,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         style={{ backgroundColor: "#4a2a80" }}
       >
         <SidebarHeader className="gap-3.5 border-b border-[#5c3a92] p-4">
-          <div className="mY-2">
-            <Image src={"/logo.avif"} alt="" width={200} height={120} />
+          <Image src={"/logo.avif"} alt="" width={200} height={120} />
+          <div className="my-2">
+            <Button
+              className="w-full cursor-pointer"
+              variant={"secondary"}
+              asChild
+            >
+              <Link href="/">New chat</Link>
+            </Button>
           </div>
           <SidebarInput
             placeholder="Type to search..."

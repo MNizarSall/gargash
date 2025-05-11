@@ -46,11 +46,11 @@ export default function ChatsLayout({
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="#">Chats</BreadcrumbLink>
+                <BreadcrumbLink href="/">Chats</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Inbox</BreadcrumbPage>
+                <BreadcrumbPage>List</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>

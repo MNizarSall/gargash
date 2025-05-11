@@ -1,5 +1,11 @@
 import { UUID } from "crypto";
 
+export enum DiscussionStatus {
+  STARTED = "STARTED",
+  CONTINUES = "CONTINUES",
+  CONCLUDED = "CONCLUDED",
+}
+
 export type Discussion = {
   content: string;
   role: string;
@@ -12,7 +18,7 @@ export type Chat = {
   prompt: string;
   createdAt: number;
   discussion?: Discussion[];
-  status: string;
+  status: DiscussionStatus | string;
   conclusion: string;
 };
 

@@ -60,8 +60,8 @@ export default function ChatList() {
 
   return (
     <>
-      {chats.map((chat) => {
-        return <ChatListItem key={chat.id} chat={chat} />;
+      {chats.map((chat, index) => {
+        return <ChatListItem key={index} chat={chat} />;
       })}
       {nextToken && (
         <div ref={loaderRef} className="text-center py-4 text-gray-500">
