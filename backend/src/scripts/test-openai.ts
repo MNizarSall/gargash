@@ -3,14 +3,7 @@ import { join } from "path";
 import { v4 as uuidv4 } from "uuid";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
-import {
-  AIExperts,
-  ExpertRole,
-  LeaderResponse,
-  SalesResponse,
-  LegalResponse,
-  HRResponse,
-} from "../clients/ai-experts";
+import { AIExperts, ExpertRole, LeaderResponse, ExpertResponse } from "../clients/ai-experts";
 import { Chat, Message, DiscussionStatus } from "../models/chat.model";
 import { fromIni } from "@aws-sdk/credential-providers";
 
@@ -23,8 +16,6 @@ const client = new DynamoDBClient({
   credentials: fromIni({ profile: "YasharHND" }),
 });
 const docClient = DynamoDBDocumentClient.from(client);
-
-type ExpertResponse = LeaderResponse | SalesResponse | LegalResponse | HRResponse;
 
 // Format conversation history for the next message
 const formatHistoryForPrompt = (history: Message[]): string[] => {
@@ -102,7 +93,7 @@ async function conductExpertDiscussion(initialQuery: string, maxTurns: number = 
       console.log(`\n=== Turn ${currentTurn} ===\n`);
 
       // Get current chat state
-      const chat = await getChat(chatId, createdAt); // Pass the timestamp
+      const chat = await getChat(chatId, createdAt);
       if (!chat) throw new Error("Chat not found");
 
       // Ask leader for next steps
@@ -127,23 +118,14 @@ async function conductExpertDiscussion(initialQuery: string, maxTurns: number = 
         `Leader → ${leaderResponse.targetExpert.toUpperCase()}: ${leaderResponse.message}`
       );
 
-      // Consult the targeted expert
-      const expertMessages = [...formatHistoryForPrompt(chat.discussion), leaderResponse.message];
-
-      let expertResponse: ExpertResponse;
-      switch (leaderResponse.targetExpert) {
-        case ExpertRole.SALES:
-          expertResponse = await AIExperts.askSales(expertMessages);
-          break;
-        case ExpertRole.LEGAL:
-          expertResponse = await AIExperts.askLegal(expertMessages);
-          break;
-        case ExpertRole.HR:
-          expertResponse = await AIExperts.askHR(expertMessages);
-          break;
-        default:
-          throw new Error(`Unknown expert role: ${leaderResponse.targetExpert}`);
+      // Validate expert role
+      if (leaderResponse.targetExpert === ExpertRole.LEADER) {
+        throw new Error("Leader cannot be targeted as an expert");
       }
+
+      // Consult the targeted expert using the dynamic method
+      const expertMessages = [...formatHistoryForPrompt(chat.discussion), leaderResponse.message];
+      const expertResponse = await AIExperts.askExpert(leaderResponse.targetExpert, expertMessages);
 
       // Add expert's message to discussion
       const expertMessage: Message = {

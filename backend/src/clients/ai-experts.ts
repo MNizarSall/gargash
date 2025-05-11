@@ -11,23 +11,21 @@ export enum ExpertRole {
   HR = "hr",
 }
 
-export interface LeaderResponse {
-  targetExpert: ExpertRole;
+export interface ExpertResponse {
   message: string;
+}
+
+export interface LeaderResponse extends ExpertResponse {
+  targetExpert: ExpertRole;
   discussionComplete?: boolean;
 }
 
-export interface SalesResponse {
-  message: string;
-}
-
-export interface LegalResponse {
-  message: string;
-}
-
-export interface HRResponse {
-  message: string;
-}
+const EXPERT_PROMPTS: Record<ExpertRole, string> = {
+  [ExpertRole.LEADER]: LEADER_EXPERT_PROMPT,
+  [ExpertRole.SALES]: SALES_EXPERT_PROMPT,
+  [ExpertRole.LEGAL]: LEGAL_EXPERT_PROMPT,
+  [ExpertRole.HR]: HR_EXPERT_PROMPT,
+};
 
 export class AIExperts {
   private static createMessages(systemPrompt: string, userMessages: string[]): Message[] {
@@ -39,7 +37,7 @@ export class AIExperts {
 
   static async askLeader(messages: string[]): Promise<LeaderResponse> {
     const completion = await openAIClient.instance.complete(
-      this.createMessages(LEADER_EXPERT_PROMPT, messages)
+      this.createMessages(EXPERT_PROMPTS[ExpertRole.LEADER], messages)
     );
 
     const content = completion.choices[0]?.message?.content;
@@ -48,35 +46,20 @@ export class AIExperts {
     return JSON.parse(content);
   }
 
-  static async askSales(messages: string[]): Promise<SalesResponse> {
+  static async askExpert(
+    role: Exclude<ExpertRole, ExpertRole.LEADER>,
+    messages: string[]
+  ): Promise<ExpertResponse> {
+    if (!EXPERT_PROMPTS[role]) {
+      throw new Error(`Invalid expert role: ${role}`);
+    }
+
     const completion = await openAIClient.instance.complete(
-      this.createMessages(SALES_EXPERT_PROMPT, messages)
+      this.createMessages(EXPERT_PROMPTS[role], messages)
     );
 
     const content = completion.choices[0]?.message?.content;
-    if (!content) throw new Error("No response from sales expert");
-
-    return JSON.parse(content);
-  }
-
-  static async askLegal(messages: string[]): Promise<LegalResponse> {
-    const completion = await openAIClient.instance.complete(
-      this.createMessages(LEGAL_EXPERT_PROMPT, messages)
-    );
-
-    const content = completion.choices[0]?.message?.content;
-    if (!content) throw new Error("No response from legal expert");
-
-    return JSON.parse(content);
-  }
-
-  static async askHR(messages: string[]): Promise<HRResponse> {
-    const completion = await openAIClient.instance.complete(
-      this.createMessages(HR_EXPERT_PROMPT, messages)
-    );
-
-    const content = completion.choices[0]?.message?.content;
-    if (!content) throw new Error("No response from HR expert");
+    if (!content) throw new Error(`No response from ${role} expert`);
 
     return JSON.parse(content);
   }
