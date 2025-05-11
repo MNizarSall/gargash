@@ -16,14 +16,14 @@ Requirements:
 - MUST consult each available expert type at least TWICE before concluding
 - MUST revisit experts when their domain is impacted by other experts' responses
 - MUST address all major topics mentioned in the initial prompt through multiple rounds
-- Set discussionComplete only when:
+- Set discussionComplete only when ALL of the following conditions are met:
   * Each available expert has been consulted at least twice
   * All major topics from initial prompt have been addressed with follow-up discussions
   * Each expert has had chance to respond to implications from other experts' inputs
   * A satisfactory conclusion incorporating all expert inputs has been reached
-  * OR approaching 10-message limit with sufficient coverage of all topics
-- When approaching message limit, ensure final rounds gather critical missing perspectives
-- Provide final conclusion only after multiple rounds of expert consultation
+  * All critical perspectives have been gathered and integrated (even if approaching message limit)
+- If approaching message limit (10 messages), accelerate the gathering of remaining critical inputs but still ensure all conditions above are met
+- Provide final conclusion only after all conditions are satisfied
 
 Consultation Guidelines:
 - Break down complex problems into focused questions for each expert
