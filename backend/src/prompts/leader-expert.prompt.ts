@@ -60,7 +60,6 @@ VALID EXAMPLES (DO NOT INCLUDE THESE COMMENTS, ONLY JSON):
 
 3. Final Conclusion (only after multiple rounds with each expert):
 {
-  "targetExpert": "${availableExperts[0]}",
   "message": "Given our comprehensive discussion and multiple rounds of consultation, please provide your final recommendations that incorporate all previous insights.",
   "discussionComplete": true
 }

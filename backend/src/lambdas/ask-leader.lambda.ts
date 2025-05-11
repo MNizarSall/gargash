@@ -11,9 +11,12 @@ interface Event {
   createdAt: number;
   prompt: string;
   currentTurn: number;
+  maxTurns?: number;
 }
 
 export const handler = async (event: Event) => {
+  const maxTurns = event.maxTurns || 10;
+
   // Get current chat state
   const result = await docClient.send(
     new GetCommand({
@@ -49,20 +52,27 @@ export const handler = async (event: Event) => {
       return `${rolePrefix}: ${msg.content}`;
     }) || [];
 
-  // Ask leader for next steps
+  // Ask leader for next steps or conclusion based on max turns
+  const promptMessage =
+    event.currentTurn === 0
+      ? event.prompt
+      : event.currentTurn >= maxTurns
+        ? "We've reached the maximum number of turns. Based on the discussion above, please provide a final conclusion that summarizes the key points and recommendations."
+        : "Based on the discussion above, what should be our next step?";
+
   const leaderResponse = await AIExperts.askLeader(
-    [
-      ...history,
-      event.currentTurn === 0
-        ? event.prompt
-        : "Based on the discussion above, what should be our next step?",
-    ],
+    [...history, promptMessage],
     chat.availableExperts as NonLeaderExpertRole[]
   );
 
-  // Ensure discussionComplete is set
-  if (leaderResponse.discussionComplete === undefined) {
-    leaderResponse.discussionComplete = false;
+  // Set discussionComplete to true if max turns reached
+  leaderResponse.discussionComplete =
+    event.currentTurn >= maxTurns ? true : (leaderResponse.discussionComplete ?? false);
+
+  // Remove targetExpert if discussion is complete
+  if (leaderResponse.discussionComplete) {
+    const { targetExpert, ...responseWithoutTarget } = leaderResponse;
+    return responseWithoutTarget;
   }
 
   return leaderResponse;

@@ -22,7 +22,7 @@ export interface ExpertResponse {
 }
 
 export interface LeaderResponse extends ExpertResponse {
-  targetExpert: ExpertRole;
+  targetExpert?: NonLeaderExpertRole;
   discussionComplete?: boolean;
 }
 
@@ -60,11 +60,6 @@ export class AIExperts {
     if (!content) throw new Error("No response from leader");
 
     const response = JSON.parse(content) as LeaderResponse;
-
-    // Validate that the leader only chose from available experts
-    if (!availableExperts.includes(response.targetExpert as NonLeaderExpertRole)) {
-      throw new Error(`Leader chose unavailable expert: ${response.targetExpert}`);
-    }
 
     return response;
   }

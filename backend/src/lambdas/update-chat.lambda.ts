@@ -9,7 +9,7 @@ interface Event {
   chatId: string;
   createdAt: number;
   leaderResponse: {
-    targetExpert: string;
+    targetExpert?: string;
     message: string;
     discussionComplete: boolean;
   };
@@ -50,12 +50,18 @@ export const handler = async (event: Event) => {
   const leaderMessage: Message = {
     role: "leader",
     content: event.leaderResponse.message,
-    targetExpert: event.leaderResponse.targetExpert,
+    ...(event.leaderResponse.targetExpert && { targetExpert: event.leaderResponse.targetExpert }),
   };
-  const discussion = [...(chat.discussion || []), leaderMessage];
+  const discussion = event.leaderResponse.discussionComplete
+    ? chat.discussion || []
+    : [...(chat.discussion || []), leaderMessage];
 
   // Add expert's message if available
-  if (event.expertResponse) {
+  if (
+    event.expertResponse &&
+    event.leaderResponse.targetExpert &&
+    !event.leaderResponse.discussionComplete
+  ) {
     const expertMessage: Message = {
       role: event.leaderResponse.targetExpert,
       content: event.expertResponse.message,
