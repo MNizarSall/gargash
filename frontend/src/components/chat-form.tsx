@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { AlertCircle, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { models } from "@/lib/models";
 
 const formSchema = z.object({
   prompt: z.string().min(2, {
@@ -132,15 +133,6 @@ export default function ChatForm() {
       setIsSubmitting(false);
     }
   }
-
-  const models = {
-    sales: "Sales",
-    legal: "Legal",
-    hr: "HR Generalist",
-    hr_ops_admin: "HR Operations & Administration",
-    payroll_benefits: "Payroll & Benefits Specialist",
-    recruitment: "Recruitment Specialist",
-  };
 
   return (
     <div className="relative h-full flex items-center justify-center flex-col">

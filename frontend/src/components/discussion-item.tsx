@@ -1,6 +1,7 @@
 import { Discussion, roleColors, roleIcons } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Badge } from "./ui/badge";
+import { models } from "@/lib/models";
 
 export default function DiscussionItem({
   discussion,
@@ -11,7 +12,6 @@ export default function DiscussionItem({
     <div
       className={cn(
         "p-4 rounded-lg border ",
-
         roleColors[discussion.role as keyof typeof roleColors] ||
           "bg-gray-50 border-gray-200"
       )}
@@ -21,7 +21,9 @@ export default function DiscussionItem({
           <span className="text-lg">
             {roleIcons[discussion.role as keyof typeof roleIcons] || "🗣️"}
           </span>
-          <span className="font-medium capitalize">{discussion.role}</span>
+          <span className="font-medium capitalize">
+            {models[discussion.role] ?? "Leader"}
+          </span>
         </div>
 
         {discussion.targetExpert && (
@@ -30,7 +32,7 @@ export default function DiscussionItem({
             <Badge variant="outline" className="capitalize">
               {roleIcons[discussion.targetExpert as keyof typeof roleIcons] ||
                 "🎯"}{" "}
-              {discussion.targetExpert}
+              {models[discussion.targetExpert]}
             </Badge>
           </div>
         )}
