@@ -151,7 +151,7 @@ export default function ChatForm() {
         </div>
       )}
       <h2 className="text-2xl font-bold mb-8">Select Experts</h2>
-      <div className="flex gap-2 flex-wrap mb-4 mx-auto max-w-3xl">
+      <div className="flex gap-4 flex-wrap mb-4 mx-auto max-w-3xl items-center justify-center">
         {Object.entries(models).map(([key, value]) => {
           const isSelected = availableExperts.includes(key);
           const style = agentStyles[key as keyof typeof agentStyles] || {
