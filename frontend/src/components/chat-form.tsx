@@ -145,6 +145,7 @@ export default function ChatForm() {
       <h2 className="text-2xl font-bold mb-8">Select Experts</h2>
       <div className="flex gap-4 flex-wrap mb-4 mx-auto max-w-3xl items-center justify-center">
         {Object.entries(models).map(([key, value]) => {
+          if (key === "leader") return;
           const isSelected = availableExperts.includes(key);
           const style = agentStyles[key as keyof typeof agentStyles] || {
             baseColor: "text-gray-600 border-gray-200",

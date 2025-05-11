@@ -22,7 +22,7 @@ export default function DiscussionItem({
             {roleIcons[discussion.role as keyof typeof roleIcons] || "🗣️"}
           </span>
           <span className="font-medium capitalize">
-            {models[discussion.role] ?? "Leader"}
+            {models[discussion.role]}
           </span>
         </div>
 

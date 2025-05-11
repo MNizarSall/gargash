@@ -1,4 +1,5 @@
-export const models = {
+export const models: Record<string, string> = {
+  leader: "Leader",
   sales: "Sales",
   legal: "Legal",
   hr: "HR Generalist",
