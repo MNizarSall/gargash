@@ -148,7 +148,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               variant={"secondary"}
               asChild
             >
-              <Link href="/">New chat</Link>
+              <Link href="/">New inquiry</Link>
             </Button>
           </div>
           <SidebarInput
